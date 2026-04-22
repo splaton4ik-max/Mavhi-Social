@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бортова мережа</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { width: 100%; max-width: 500px; }
+        .create-post { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
+        textarea { width: 100%; background: transparent; border: none; color: white; resize: none; outline: none; font-size: 16px; }
+        .post { background: #1e1e1e; padding: 15px; border-radius: 12px; border: 1px solid #333; margin-bottom: 10px; }
+        .user { font-weight: bold; color: #bb86fc; margin-bottom: 5px; }
+        button { background: #bb86fc; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; color: #121212; }
+        button:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Моя стрічка</h2>
+        
+        <div class="create-post">
+            <textarea placeholder="Що цікавого?" rows="3"></textarea>
+            <div style="text-align: right;">
+                <button onclick="publishPost()">Опублікувати</button>
+            </div>
+        </div>
+
+        <div class="post">
+            <div class="user">@admin</div>
+            <div class="content">Вітаю! Тепер у нас є темна тема. Спробуй написати щось у полі вище.</div>
+        </div>
+    </div>
+
+</body>
+<script>
+    function publishPost() {
+        // 1. Беремо текст із поля вводу
+        const textarea = document.querySelector('textarea');
+        const text = textarea.value;
+
+        if (text.trim() === "") {
+            alert("Напиши хоча б щось!");
+            return;
+        }
+
+        // 2. Створюємо "скелет" нового поста
+        const postHTML = `
+            <div class="post">
+                <div class="user">@ти_зараз</div>
+                <div class="content">${text}</div>
+            </div>
+        `;
+
+        // 3. Додаємо цей пост у список
+        document.querySelector('.container').insertAdjacentHTML('beforeend', postHTML);
+
+        // 4. Очищаємо поле
+        textarea.value = "";
+    }
+</script>
+</html>
