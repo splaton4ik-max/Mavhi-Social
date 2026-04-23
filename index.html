@@ -3,61 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Бортова мережа</title>
+    <title>Mavhi Social</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #121212; 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+            margin: 0;
+        }
         .container { width: 100%; max-width: 500px; }
-        .create-post { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
-        textarea { width: 100%; background: transparent; border: none; color: white; resize: none; outline: none; font-size: 16px; }
-        .post { background: #1e1e1e; padding: 15px; border-radius: 12px; border: 1px solid #333; margin-bottom: 10px; }
+        h2 { color: #bb86fc; }
+        .create-post { 
+            background: #1e1e1e; 
+            padding: 15px; 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            border: 1px solid #333; 
+        }
+        textarea { 
+            width: 100%; 
+            background: transparent; 
+            border: none; 
+            color: white; 
+            resize: none; 
+            outline: none; 
+            font-size: 16px; 
+            margin-bottom: 10px;
+        }
+        .post { 
+            background: #1e1e1e; 
+            padding: 15px; 
+            border-radius: 12px; 
+            border: 1px solid #333; 
+            margin-bottom: 10px; 
+        }
         .user { font-weight: bold; color: #bb86fc; margin-bottom: 5px; }
-        button { background: #bb86fc; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; color: #121212; }
+        button { 
+            background: #bb86fc; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 20px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            color: #121212; 
+        }
         button:hover { opacity: 0.8; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2>Моя стрічка</h2>
+        <h2>Mavhi Social</h2>
         
         <div class="create-post">
-            <textarea placeholder="Що цікавого?" rows="3"></textarea>
+            <textarea id="postInput" placeholder="Що цікавого?" rows="3"></textarea>
             <div style="text-align: right;">
                 <button onclick="publishPost()">Опублікувати</button>
             </div>
         </div>
 
-        <div class="post">
-            <div class="user">@admin</div>
-            <div class="content">Вітаю! Тепер у нас є темна тема. Спробуй написати щось у полі вище.</div>
-        </div>
+        <div id="posts-container">
+            </div>
     </div>
 
-</body>
-<script>
-    function publishPost() {
-        // 1. Беремо текст із поля вводу
-        const textarea = document.querySelector('textarea');
-        const text = textarea.value;
+    <script>
+        // === ВСТАВ СВОЇ ДАНІ НИЖЧЕ ===
+        const SUPABASE_URL = 'https://dxfebjjhnxjzzwigxxka.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4ZmViampobnhqenp3aWd4eGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NjY5NjYsImV4cCI6MjA5MjQ0Mjk2Nn0.RI7KurhtW93Mu8qbe_d9TrH-NuJoM_hVZ2oSCIXaxSU';
+        // ============================
 
-        if (text.trim() === "") {
-            alert("Напиши хоча б щось!");
-            return;
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function loadPosts() {
+            const { data: posts, error } = await supabaseClient
+                .from('posts')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Помилка:', error);
+                return;
+            }
+
+            const container = document.getElementById('posts-container');
+            container.innerHTML = ''; 
+
+            posts.forEach(post => {
+                const postHTML = `
+                    <div class="post">
+                        <div class="user">@${post.username || 'анонім'}</div>
+                        <div class="content">${post.content}</div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', postHTML);
+            });
         }
 
-        // 2. Створюємо "скелет" нового поста
-        const postHTML = `
-            <div class="post">
-                <div class="user">@ти_зараз</div>
-                <div class="content">${text}</div>
-            </div>
-        `;
+        async function publishPost() {
+            const input = document.getElementById('postInput');
+            const text = input.value;
 
-        // 3. Додаємо цей пост у список
-        document.querySelector('.container').insertAdjacentHTML('beforeend', postHTML);
+            if (text.trim() === "") return;
 
-        // 4. Очищаємо поле
-        textarea.value = "";
-    }
-</script>
+            const { error } = await supabaseClient
+                .from('posts')
+                .insert([{ username: 'сплатонік', content: text }]);
+
+            if (error) {
+                alert("Помилка! Перевір RLS у Supabase.");
+            } else {
+                input.value = ""; 
+                loadPosts(); 
+            }
+        }
+
+        loadPosts();
+    </script>
+</body>
 </html>
