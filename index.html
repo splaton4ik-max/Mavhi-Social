@@ -6,29 +6,35 @@
     <title>Mavhi Social</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --accent: #bb86fc; --bg: #121212; --card: #1e1e1e; --text-dim: #a0a0a0; }
+        :root { --accent: #bb86fc; --bg: #121212; --card: #1e1e1e; --text-dim: #a0a0a0; --comment-bg: #252525; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
         .container { width: 100%; max-width: 500px; }
         .hidden { display: none !important; }
         
+        /* АВАТАРИ ТА ПОСТИ */
         .avatar { width: 45px; height: 45px; border-radius: 50%; background: #333; margin-right: 12px; border: 2px solid var(--accent); }
-        .post { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid #333; margin-bottom: 15px; display: flex; align-items: flex-start; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
+        .post { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; display: flex; align-items: flex-start; }
         .post-content { flex: 1; }
         .user-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .user { font-weight: bold; color: var(--accent); font-size: 14px; }
         .time { font-size: 11px; color: var(--text-dim); }
         .text { font-size: 16px; line-height: 1.4; color: #e0e0e0; margin-bottom: 10px; }
         
-        .actions { display: flex; gap: 15px; }
-        .like-btn { background: none; border: 1px solid #444; color: var(--text-dim); padding: 5px 12px; border-radius: 15px; font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer; transition: 0.2s; }
-        .like-btn:hover { border-color: #ff4081; color: #ff4081; }
+        /* КОМЕНТАРІ */
+        .comments-section { margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; }
+        .comment { background: var(--comment-bg); padding: 8px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .comment-avatar { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--accent); }
+        .comment-user { font-weight: bold; color: var(--accent); font-size: 12px; }
+        .comment-input-row { display: flex; gap: 8px; margin-top: 10px; }
+        .comment-input { flex: 1; background: #252525; border: 1px solid #444; color: white; padding: 8px 12px; border-radius: 15px; font-size: 14px; outline: none; }
 
+        /* ІНТЕРФЕЙС */
+        .actions { display: flex; gap: 15px; margin-top: 5px; }
+        .like-btn { background: none; border: 1px solid #444; color: var(--text-dim); padding: 5px 12px; border-radius: 15px; font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
         .create-post, .auth-box { background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 25px; border: 1px solid #444; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        input, textarea { width: 100%; background: #252525; border: 1px solid #333; color: white; padding: 12px; margin-bottom: 10px; border-radius: 10px; box-sizing: border-box; outline: none; font-size: 16px; }
+        input, textarea { width: 100%; background: #252525; border: 1px solid #333; color: white; padding: 12px; margin-bottom: 10px; border-radius: 10px; box-sizing: border-box; outline: none; font-size: 15px; }
         button.main-btn { width: 100%; background: var(--accent); border: none; padding: 12px; border-radius: 25px; font-weight: bold; cursor: pointer; color: #121212; transition: 0.3s; margin-top: 5px; }
-        button.main-btn:hover { transform: scale(1.02); opacity: 0.9; }
+        button.main-btn:hover { transform: scale(1.02); }
     </style>
 </head>
 <body>
@@ -36,7 +42,7 @@
     <div id="auth-container" class="container">
         <h2 style="text-align:center; color: var(--accent);">Mavhi Social</h2>
         <div class="auth-box">
-            <input type="email" id="email" placeholder="Твій Email" required>
+            <input type="email" id="email" placeholder="Email" required>
             <input type="password" id="password" placeholder="Пароль" required>
             <button class="main-btn" onclick="handleAuth('login')">Увійти</button>
             <button class="main-btn" style="background: #333; color: white;" onclick="handleAuth('signup')">Реєстрація</button>
@@ -44,12 +50,13 @@
     </div>
 
     <div id="main-content" class="container hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="margin:0; color: var(--accent);">Mavhi</h2>
-            <button onclick="logout()" style="background:#cf6679; color:white; border:none; padding:5px 15px; border-radius:10px; cursor:pointer;">Вийти</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h2 style="margin:0; color: var(--accent);">Mavhi Social</h2>
+            <button onclick="logout()" style="background:#cf6679; color:white; border:none; padding:5px 12px; border-radius:10px; cursor:pointer; font-size:12px;">Вийти</button>
         </div>
-        
+
         <div class="create-post">
+            <input type="text" id="nicknameInput" placeholder="Твій нікнейм (напр. Кібер-Кіт)" maxlength="20">
             <textarea id="postInput" placeholder="Що цікавого?" rows="3"></textarea>
             <div style="text-align: right;">
                 <button class="main-btn" style="width:auto;" onclick="publishPost()">Опублікувати</button>
@@ -69,7 +76,7 @@
         
         function formatTime(dateStr) {
             const date = new Date(dateStr);
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + date.toLocaleDateString();
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
         async function handleAuth(type) {
@@ -85,8 +92,12 @@
         function showApp() {
             document.getElementById('auth-container').classList.add('hidden');
             document.getElementById('main-content').classList.remove('hidden');
+            // Відновлюємо нікнейм з пам'яті браузера
+            if(localStorage.getItem('mavhi_nick')) {
+                document.getElementById('nicknameInput').value = localStorage.getItem('mavhi_nick');
+            }
             loadPosts();
-            initRealtime(); // Вмикаємо магію Realtime
+            initRealtime();
         }
 
         async function logout() { await supabaseClient.auth.signOut(); location.reload(); }
@@ -95,11 +106,21 @@
             const { data: posts } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
             const container = document.getElementById('posts-container');
             container.innerHTML = ''; 
-            posts.forEach(post => container.insertAdjacentHTML('beforeend', renderPostHTML(post)));
+            for (const post of posts) {
+                const { data: comments } = await supabaseClient.from('comments').select('*').eq('post_id', post.id).order('created_at', { ascending: true });
+                container.insertAdjacentHTML('beforeend', renderPostHTML(post, comments));
+            }
         }
 
-        function renderPostHTML(post) {
+        function renderPostHTML(post, comments = []) {
             const userSeed = post.username || 'anon';
+            let commentsHTML = comments.map(c => `
+                <div class="comment">
+                    <img class="comment-avatar" src="${getAvatar(c.username)}">
+                    <div><span class="comment-user">@${c.username}:</span> ${c.content}</div>
+                </div>
+            `).join('');
+
             return `
                 <div class="post" id="post-${post.id}">
                     <img class="avatar" src="${getAvatar(userSeed)}">
@@ -110,9 +131,14 @@
                         </div>
                         <div class="text">${post.content}</div>
                         <div class="actions">
-                            <button class="like-btn" onclick="addLike(${post.id}, ${post.likes || 0})">
-                                ❤️ <span>${post.likes || 0}</span>
-                            </button>
+                            <button class="like-btn" onclick="addLike(${post.id}, ${post.likes || 0})">❤️ ${post.likes || 0}</button>
+                        </div>
+                        <div class="comments-section" id="comments-${post.id}">
+                            ${commentsHTML}
+                            <div class="comment-input-row">
+                                <input type="text" class="comment-input" id="input-${post.id}" placeholder="Напишіть коментар...">
+                                <button onclick="sendComment(${post.id})" style="background:var(--accent); border:none; border-radius:50%; width:35px; height:35px; cursor:pointer;">➔</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -121,9 +147,21 @@
 
         async function publishPost() {
             const input = document.getElementById('postInput');
+            const nickInput = document.getElementById('nicknameInput');
             if (!input.value.trim()) return;
-            const userName = currentUser.email.split('@')[0];
-            await supabaseClient.from('posts').insert([{ username: userName, content: input.value, likes: 0 }]);
+
+            const finalNick = nickInput.value.trim() || currentUser.email.split('@')[0];
+            localStorage.setItem('mavhi_nick', finalNick); // Запам'ятати нік
+
+            await supabaseClient.from('posts').insert([{ username: finalNick, content: input.value, likes: 0 }]);
+            input.value = "";
+        }
+
+        async function sendComment(postId) {
+            const input = document.getElementById(`input-${postId}`);
+            if (!input.value.trim()) return;
+            const myNick = document.getElementById('nicknameInput').value.trim() || currentUser.email.split('@')[0];
+            await supabaseClient.from('comments').insert([{ post_id: postId, username: myNick, content: input.value }]);
             input.value = "";
         }
 
@@ -131,20 +169,10 @@
             await supabaseClient.from('posts').update({ likes: currentLikes + 1 }).eq('id', id);
         }
 
-        // РЕАЛЬНИЙ ЧАС (REALTIME)
         function initRealtime() {
-            supabaseClient
-                .channel('schema-db-changes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, (payload) => {
-                    if (payload.eventType === 'INSERT') {
-                        loadPosts(); // Прилетів новий пост
-                    } else if (payload.eventType === 'UPDATE') {
-                        // Оновлюємо тільки лічильник лайків без перезавантаження всього списку
-                        const likeSpan = document.querySelector(`#post-${payload.new.id} .like-btn span`);
-                        if (likeSpan) likeSpan.innerText = payload.new.likes;
-                    }
-                })
-                .subscribe();
+            supabaseClient.channel('any').on('postgres_changes', { event: '*', schema: 'public' }, () => {
+                loadPosts(); // Для простоти оновлюємо все при будь-якій зміні
+            }).subscribe();
         }
 
         async function checkSession() {
