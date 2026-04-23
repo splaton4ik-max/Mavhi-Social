@@ -17,24 +17,27 @@
             margin: 0;
         }
         .container { width: 100%; max-width: 500px; }
-        h2 { color: #bb86fc; }
-        .create-post { 
+        h2 { color: #bb86fc; text-align: center; }
+        .create-post, .auth-box { 
             background: #1e1e1e; 
             padding: 15px; 
             border-radius: 12px; 
             margin-bottom: 20px; 
             border: 1px solid #333; 
         }
-        textarea { 
+        input, textarea { 
             width: 100%; 
-            background: transparent; 
-            border: none; 
+            background: #252525; 
+            border: 1px solid #333; 
             color: white; 
-            resize: none; 
-            outline: none; 
-            font-size: 16px; 
+            padding: 12px;
             margin-bottom: 10px;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            outline: none;
         }
+        textarea { resize: none; border: none; background: transparent; }
         .post { 
             background: #1e1e1e; 
             padding: 15px; 
@@ -53,12 +56,31 @@
             color: #121212; 
         }
         button:hover { opacity: 0.8; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>Mavhi Social</h2>
+    <div id="auth-container" class="container">
+        <h2>Вхід у Mavhi</h2>
+        <div class="auth-box">
+            <form id="auth-form">
+                <input type="email" id="email" placeholder="Твій Email" required autocomplete="username">
+                <input type="password" id="password" placeholder="Пароль" required autocomplete="current-password">
+                
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                    <button type="button" onclick="handleAuth('login')">Увійти</button>
+                    <button type="button" onclick="handleAuth('signup')" style="background: #333; color: white;">Реєстрація</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="main-content" class="container hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>Mavhi Social</h2>
+            <button onclick="logout()" style="padding: 5px 10px; font-size: 12px; background: #cf6679;">Вийти</button>
+        </div>
         
         <div class="create-post">
             <textarea id="postInput" placeholder="Що цікавого?" rows="3"></textarea>
@@ -67,28 +89,61 @@
             </div>
         </div>
 
-        <div id="posts-container">
-            </div>
+        <div id="posts-container"></div>
     </div>
 
     <script>
-        // === ВСТАВ СВОЇ ДАНІ НИЖЧЕ ===
+        // ДАНІ ПІДКЛЮЧЕННЯ
         const SUPABASE_URL = 'https://dxfebjjhnxjzzwigxxka.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4ZmViampobnhqenp3aWd4eGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NjY5NjYsImV4cCI6MjA5MjQ0Mjk2Nn0.RI7KurhtW93Mu8qbe_d9TrH-NuJoM_hVZ2oSCIXaxSU';
-        // ============================
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentUser = null;
 
+        // ФУНКЦІЯ ВХОДУ ТА РЕЄСТРАЦІЇ
+        async function handleAuth(type) {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) return alert("Заповни всі поля!");
+
+            let result;
+            if (type === 'signup') {
+                result = await supabaseClient.auth.signUp({ email, password });
+                if (!result.error) alert("Успіх! Якщо ввімкнено підтвердження — перевір пошту. Якщо ні — тисни Увійти.");
+            } else {
+                result = await supabaseClient.auth.signInWithPassword({ email, password });
+            }
+
+            if (result.error) {
+                alert("Помилка: " + result.error.message);
+            } else if (result.data.user) {
+                currentUser = result.data.user;
+                showApp();
+            }
+        }
+
+        // ПОКАЗАТИ ОСНОВНИЙ КОНТЕНТ
+        function showApp() {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            loadPosts();
+        }
+
+        // ВИХІД
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            location.reload();
+        }
+
+        // ЗАВАНТАЖЕННЯ ПОСТІВ
         async function loadPosts() {
             const { data: posts, error } = await supabaseClient
                 .from('posts')
                 .select('*')
                 .order('created_at', { ascending: false });
 
-            if (error) {
-                console.error('Помилка:', error);
-                return;
-            }
+            if (error) return console.error('Помилка:', error);
 
             const container = document.getElementById('posts-container');
             container.innerHTML = ''; 
@@ -104,25 +159,38 @@
             });
         }
 
+        // ПУБЛІКАЦІЯ
         async function publishPost() {
             const input = document.getElementById('postInput');
             const text = input.value;
 
             if (text.trim() === "") return;
 
+            // Використовуємо email користувача як ім'я
+            const userName = currentUser ? currentUser.email.split('@')[0] : 'гість';
+
             const { error } = await supabaseClient
                 .from('posts')
-                .insert([{ username: 'сплатонік', content: text }]);
+                .insert([{ username: userName, content: text }]);
 
             if (error) {
-                alert("Помилка! Перевір RLS у Supabase.");
+                alert("Помилка! Перевір RLS (Row Level Security) у Supabase.");
             } else {
                 input.value = ""; 
                 loadPosts(); 
             }
         }
 
-        loadPosts();
+        // ПЕРЕВІРКА СЕСІЇ ПРИ ЗАВАНТАЖЕННІ
+        async function checkSession() {
+            const { data } = await supabaseClient.auth.getSession();
+            if (data.session) {
+                currentUser = data.session.user;
+                showApp();
+            }
+        }
+
+        checkSession();
     </script>
 </body>
 </html>
